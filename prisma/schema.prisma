@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model companys {
+  id         Int      @id @default(autoincrement())
+  nombre     String   @db.VarChar(255)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @db.Timestamp(0)
+  orders     orders[]
+}
+
+model drivers {
+  id               Int                @id @default(autoincrement())
+  nombre           String             @db.VarChar(255)
+  costo_viaje      Decimal            @db.Decimal(10, 2)
+  created_at       DateTime           @default(now()) @db.Timestamp(0)
+  updated_at       DateTime           @default(now()) @db.Timestamp(0)
+  routeassignments routeassignments[]
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String   @db.Text
+  queue      String   @db.Text
+  payload    String   @db.LongText
+  exception  String   @db.LongText
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model locations {
+  id             Int              @id @default(autoincrement())
+  lat            Decimal          @db.Decimal(10, 7)
+  lon            Decimal          @db.Decimal(10, 7)
+  created_at     DateTime         @default(now()) @db.Timestamp(0)
+  updated_at     DateTime         @default(now()) @db.Timestamp(0)
+  routelocations routelocations[]
+  suppliers      suppliers[]
+  warehouses     warehouses[]
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model offers {
+  id          Int        @id @default(autoincrement())
+  id_producto Int
+  id_bodega   Int
+  precio      Decimal    @db.Decimal(10, 2)
+  created_at  DateTime   @default(now()) @db.Timestamp(0)
+  updated_at  DateTime   @default(now()) @db.Timestamp(0)
+  products    products   @relation(fields: [id_producto], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "offers_ibfk_1")
+  warehouses  warehouses @relation(fields: [id_bodega], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "offers_ibfk_2")
+  orders      orders[]
+
+  @@index([id_bodega], map: "id_bodega")
+  @@index([id_producto], map: "id_producto")
+}
+
+model orders {
+  id         Int      @id @default(autoincrement())
+  empresa_id Int
+  oferta_id  Int
+  cantidad   Int
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @db.Timestamp(0)
+  companys   companys @relation(fields: [empresa_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "orders_ibfk_1")
+  offers     offers   @relation(fields: [oferta_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "orders_ibfk_2")
+
+  @@index([empresa_id], map: "empresa_id")
+  @@index([oferta_id], map: "oferta_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model password_resets {
+  email      String    @db.VarChar(255)
+  token      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+
+  @@index([email], map: "password_resets_email_index")
+  @@ignore
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt    @db.UnsignedBigInt
+  name           String    @db.VarChar(255)
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?   @db.Text
+  last_used_at   DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model products {
+  id             Int       @id @default(autoincrement())
+  nombre         String    @db.VarChar(255)
+  descripcion    String    @db.Text
+  cantidad       Int
+  categoria      String    @db.VarChar(255)
+  proveedor_id   Int
+  fecha_cosecha  DateTime? @db.Date
+  costo_unitario Decimal   @db.Decimal(10, 2)
+  created_at     DateTime  @default(now()) @db.Timestamp(0)
+  updated_at     DateTime  @default(now()) @db.Timestamp(0)
+  offers         offers[]
+  suppliers      suppliers @relation(fields: [proveedor_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "products_ibfk_1")
+
+  @@index([proveedor_id], map: "proveedor_id")
+}
+
+model routeassignments {
+  id         Int      @id @default(autoincrement())
+  route_id   Int
+  vehicle_id Int
+  driver_id  Int
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @db.Timestamp(0)
+  routes     routes   @relation(fields: [route_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "routeassignments_ibfk_1")
+  vehicles   vehicles @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "routeassignments_ibfk_2")
+  drivers    drivers  @relation(fields: [driver_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "routeassignments_ibfk_3")
+
+  @@index([driver_id], map: "driver_id")
+  @@index([route_id], map: "route_id")
+  @@index([vehicle_id], map: "vehicle_id")
+}
+
+model routelocations {
+  id           Int       @id @default(autoincrement())
+  id_ruta      Int
+  id_ubicacion Int
+  created_at   DateTime  @default(now()) @db.Timestamp(0)
+  updated_at   DateTime  @default(now()) @db.Timestamp(0)
+  routes       routes    @relation(fields: [id_ruta], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "routelocations_ibfk_1")
+  locations    locations @relation(fields: [id_ubicacion], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "routelocations_ibfk_2")
+
+  @@index([id_ruta], map: "id_ruta")
+  @@index([id_ubicacion], map: "id_ubicacion")
+}
+
+model routes {
+  id               Int                @id @default(autoincrement())
+  nombre           String             @db.VarChar(255)
+  distancia        Decimal            @db.Decimal(10, 2)
+  created_at       DateTime           @default(now()) @db.Timestamp(0)
+  updated_at       DateTime           @default(now()) @db.Timestamp(0)
+  routeassignments routeassignments[]
+  routelocations   routelocations[]
+}
+
+model suppliers {
+  id           Int        @id @default(autoincrement())
+  nombre       String     @db.VarChar(255)
+  ubicacion_id Int
+  telefono     String     @db.VarChar(20)
+  email        String     @db.VarChar(255)
+  created_at   DateTime   @default(now()) @db.Timestamp(0)
+  updated_at   DateTime   @default(now()) @db.Timestamp(0)
+  products     products[]
+  locations    locations  @relation(fields: [ubicacion_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "suppliers_ibfk_1")
+
+  @@index([ubicacion_id], map: "ubicacion_id")
+}
+
+model users {
+  id                BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name              String    @db.VarChar(255)
+  email             String    @unique(map: "users_email_unique") @db.VarChar(255)
+  email_verified_at DateTime? @db.Timestamp(0)
+  password          String    @db.VarChar(255)
+  remember_token    String?   @db.VarChar(100)
+  created_at        DateTime? @db.Timestamp(0)
+  updated_at        DateTime? @db.Timestamp(0)
+}
+
+model vehicles {
+  id               Int                @id @default(autoincrement())
+  capacidad        Decimal            @db.Decimal(10, 2)
+  costo_km         Decimal            @db.Decimal(10, 2)
+  created_at       DateTime           @default(now()) @db.Timestamp(0)
+  updated_at       DateTime           @default(now()) @db.Timestamp(0)
+  routeassignments routeassignments[]
+}
+
+model warehouses {
+  id            Int       @id @default(autoincrement())
+  tipo          String    @db.VarChar(255)
+  costo_mensual Decimal   @db.Decimal(10, 2)
+  ubicacion_id  Int
+  created_at    DateTime  @default(now()) @db.Timestamp(0)
+  updated_at    DateTime  @default(now()) @db.Timestamp(0)
+  offers        offers[]
+  locations     locations @relation(fields: [ubicacion_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "warehouses_ibfk_1")
+
+  @@index([ubicacion_id], map: "ubicacion_id")
+}
